@@ -1,0 +1,6 @@
+Place the complete exported Windows game package here using this exact name:
+
+NetPlay-Windows-v1.0.0.zip
+
+The website will activate the Download button automatically after deployment.
+Do not place only NetPlay.exe here; ZIP the complete Godot Windows export folder.
