@@ -135,4 +135,4 @@ async function checkGameDownload() {
   }
 }
 
-checkGameDownload();
+// checkGameDownload();
