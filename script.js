@@ -1,22 +1,35 @@
 const menuButton = document.querySelector('.menu-button');
 const navLinks = document.querySelector('.nav-links');
 
-menuButton.addEventListener('click', () => {
-  const open = menuButton.getAttribute('aria-expanded') === 'true';
-  menuButton.setAttribute('aria-expanded', String(!open));
-  menuButton.setAttribute('aria-label', open ? 'Open navigation' : 'Close navigation');
-  menuButton.textContent = open ? '☰' : '×';
-  navLinks.classList.toggle('is-open', !open);
-});
+if (menuButton && navLinks) {
+  menuButton.addEventListener('click', () => {
+    const open = menuButton.getAttribute('aria-expanded') === 'true';
+    menuButton.setAttribute('aria-expanded', String(!open));
+    menuButton.setAttribute('aria-label', open ? 'Open navigation' : 'Close navigation');
+    menuButton.textContent = open ? '☰' : '×';
+    navLinks.classList.toggle('is-open', !open);
+  });
 
-navLinks.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => {
-  menuButton.setAttribute('aria-expanded', 'false');
-  menuButton.setAttribute('aria-label', 'Open navigation');
-  menuButton.textContent = '☰';
-  navLinks.classList.remove('is-open');
-}));
+  navLinks.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => {
+    menuButton.setAttribute('aria-expanded', 'false');
+    menuButton.setAttribute('aria-label', 'Open navigation');
+    menuButton.textContent = '☰';
+    navLinks.classList.remove('is-open');
+  }));
+}
 
 const tabs = [...document.querySelectorAll('[role="tab"]')];
+
+function activateTab(activeTab) {
+  tabs.forEach((tab) => {
+    const active = tab === activeTab;
+    tab.setAttribute('aria-selected', String(active));
+    tab.tabIndex = active ? 0 : -1;
+    const panel = document.getElementById(tab.getAttribute('aria-controls'));
+    if (panel) panel.hidden = !active;
+  });
+}
+
 tabs.forEach((tab, index) => {
   tab.addEventListener('click', () => activateTab(tab));
   tab.addEventListener('keydown', (event) => {
@@ -29,17 +42,48 @@ tabs.forEach((tab, index) => {
   });
 });
 
-function activateTab(activeTab) {
-  tabs.forEach((tab) => {
-    const active = tab === activeTab;
-    tab.setAttribute('aria-selected', String(active));
-    tab.tabIndex = active ? 0 : -1;
-    document.getElementById(tab.getAttribute('aria-controls')).hidden = !active;
+const detailSearch = document.getElementById('detail-search');
+const detailClear = document.getElementById('detail-search-clear');
+const detailStatus = document.getElementById('detail-search-status');
+const detailEmpty = document.getElementById('detail-empty');
+const detailCards = [...document.querySelectorAll('[data-detail]')];
+
+function filterDetails() {
+  if (!detailSearch || !detailStatus || !detailEmpty) return;
+
+  const query = detailSearch.value.trim().toLocaleLowerCase();
+  let visibleCount = 0;
+
+  detailCards.forEach((card) => {
+    const searchableText = `${card.dataset.search || ''} ${card.textContent}`.toLocaleLowerCase();
+    const matches = !query || searchableText.includes(query);
+    card.hidden = !matches;
+    if (matches) visibleCount += 1;
+  });
+
+  detailStatus.textContent = query
+    ? `${visibleCount} matching ${visibleCount === 1 ? 'detail' : 'details'} found.`
+    : `Showing all ${detailCards.length} details.`;
+  detailEmpty.hidden = visibleCount !== 0;
+  if (detailClear) detailClear.hidden = !query;
+}
+
+if (detailSearch) {
+  detailSearch.addEventListener('input', filterDetails);
+  filterDetails();
+}
+
+if (detailClear && detailSearch) {
+  detailClear.addEventListener('click', () => {
+    detailSearch.value = '';
+    filterDetails();
+    detailSearch.focus();
   });
 }
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const revealItems = document.querySelectorAll('.reveal');
+
 if (reduceMotion || !('IntersectionObserver' in window)) {
   revealItems.forEach((item) => item.classList.add('is-visible'));
 } else {
@@ -51,6 +95,7 @@ if (reduceMotion || !('IntersectionObserver' in window)) {
       }
     });
   }, { threshold: .12 });
+
   revealItems.forEach((item) => observer.observe(item));
 }
 
@@ -63,8 +108,8 @@ async function checkGameDownload() {
   const downloadPath = gameDownload.dataset.downloadPath;
 
   if (window.location.protocol === 'file:') {
-    gameDownload.textContent = 'Build not uploaded yet';
-    downloadStatus.textContent = 'Upload the website to a web host to check and activate the official Windows package.';
+    gameDownload.textContent = 'Game package not added yet';
+    downloadStatus.textContent = 'Add NetPlay-Windows-v1.17.1.50.zip to the downloads folder, then preview this website through a local web server.';
     return;
   }
 
@@ -74,21 +119,20 @@ async function checkGameDownload() {
       cache: 'no-store'
     });
 
-    if (!response.ok) throw new Error('Game build unavailable');
+    if (!response.ok) throw new Error('Game package unavailable');
 
     gameDownload.href = downloadPath;
-    gameDownload.setAttribute('download', 'NetPlay-Windows-v1.0.0.zip');
+    gameDownload.setAttribute('download', 'NetPlay-Windows-v1.17.1.50.zip');
     gameDownload.removeAttribute('aria-disabled');
     gameDownload.removeAttribute('tabindex');
     gameDownload.classList.remove('button-disabled');
     gameDownload.classList.add('button-primary');
-    gameDownload.textContent = 'Download NetPlay v1.0.0';
+    gameDownload.textContent = 'Download NetPlay for Windows';
     downloadStatus.textContent = 'Download the 64-bit Windows ZIP, extract all files, then open NetPlay.exe.';
   } catch {
-    gameDownload.textContent = 'Build coming soon';
-    downloadStatus.textContent = 'The official Windows build has not been uploaded yet. The button will activate automatically when it becomes available.';
+    gameDownload.textContent = 'Game package not added yet';
+    downloadStatus.textContent = 'Place NetPlay-Windows-v1.17.1.50.zip inside the downloads folder. The button will activate automatically after deployment.';
   }
 }
 
 checkGameDownload();
-
