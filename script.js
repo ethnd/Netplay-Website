@@ -18,6 +18,29 @@ if (menuButton && navLinks) {
   }));
 }
 
+const sectionLinks = [...document.querySelectorAll('.nav-links a[href^="#"]')];
+const trackedSections = sectionLinks
+  .map((link) => document.querySelector(link.getAttribute('href')))
+  .filter(Boolean);
+
+if ('IntersectionObserver' in window && trackedSections.length) {
+  const sectionObserver = new IntersectionObserver((entries) => {
+    const visible = entries
+      .filter((entry) => entry.isIntersecting)
+      .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+    if (!visible) return;
+
+    sectionLinks.forEach((link) => {
+      const isCurrent = link.getAttribute('href') === `#${visible.target.id}`;
+      if (isCurrent) link.setAttribute('aria-current', 'true');
+      else link.removeAttribute('aria-current');
+    });
+  }, { rootMargin: '-28% 0px -58% 0px', threshold: [0, .2, .5] });
+
+  trackedSections.forEach((section) => sectionObserver.observe(section));
+}
+
 const tabs = [...document.querySelectorAll('[role="tab"]')];
 
 function activateTab(activeTab) {
